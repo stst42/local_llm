@@ -24,4 +24,3 @@ def build_vector_store(chunks, out_dir: str):
         for ch in chunks:
             f.write(json.dumps({"text": ch}) + "\n")
     return out_dir
-

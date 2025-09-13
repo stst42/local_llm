@@ -26,10 +26,15 @@ def split_into_chunks(text: str, max_chars: int = 4000, overlap: int = 200):
     return chunks
 
 
-def summarize_with_api(model_id: str, text: str, token: str, max_length: int = 200, min_length: int = 60):
+def summarize_with_api(
+    model_id: str, text: str, token: str, max_length: int = 200, min_length: int = 60
+):
     url = f"https://api-inference.huggingface.co/models/{model_id}"
     headers = {"Authorization": f"Bearer {token}"}
-    payload = {"inputs": text, "parameters": {"max_length": max_length, "min_length": min_length}}
+    payload = {
+        "inputs": text,
+        "parameters": {"max_length": max_length, "min_length": min_length},
+    }
     r = requests.post(url, headers=headers, json=payload, timeout=120)
     data = r.json()
     if isinstance(data, list) and len(data) > 0 and "summary_text" in data[0]:
@@ -42,11 +47,31 @@ def summarize_with_api(model_id: str, text: str, token: str, max_length: int = 2
 def main():
     p = argparse.ArgumentParser(description="Summarize documents locally or via HF API")
     p.add_argument("path", help="Path to .pdf/.doc/.docx or .txt file")
-    p.add_argument("--size", choices=["small", "medium", "large"], default="small", help="Model size to use")
-    p.add_argument("--mode", choices=["local", "api"], default="local", help="Run locally or via HF Inference API")
-    p.add_argument("--download", action="store_true", help="Download chosen model ahead of running (local mode)")
-    p.add_argument("--use-vdb", action="store_true", help="Build a simple local vector DB of chunks")
-    p.add_argument("--delete-vdb", action="store_true", help="Delete vector DB after summarization")
+    p.add_argument(
+        "--size",
+        choices=["small", "medium", "large"],
+        default="small",
+        help="Model size to use",
+    )
+    p.add_argument(
+        "--mode",
+        choices=["local", "api"],
+        default="local",
+        help="Run locally or via HF Inference API",
+    )
+    p.add_argument(
+        "--download",
+        action="store_true",
+        help="Download chosen model ahead of running (local mode)",
+    )
+    p.add_argument(
+        "--use-vdb",
+        action="store_true",
+        help="Build a simple local vector DB of chunks",
+    )
+    p.add_argument(
+        "--delete-vdb", action="store_true", help="Delete vector DB after summarization"
+    )
     p.add_argument("--out", default="summary.txt", help="Where to save the summary")
     args = p.parse_args()
 
@@ -82,7 +107,9 @@ def main():
             s = summarize_with_api(model_id, ch, token)
             interim.append(s)
         combined = "\n".join(interim)
-        final = summarize_with_api(model_id, combined, token, max_length=220, min_length=80)
+        final = summarize_with_api(
+            model_id, combined, token, max_length=220, min_length=80
+        )
 
     Path(args.out).write_text(final, encoding="utf-8")
 
@@ -94,4 +121,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

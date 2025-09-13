@@ -1,0 +1,11 @@
+transformers>=4.41.0
+huggingface_hub>=0.23.0
+accelerate>=0.31.0
+torch
+sentencepiece
+requests
+pypdf
+python-docx
+sentence-transformers
+faiss-cpu
+numpy

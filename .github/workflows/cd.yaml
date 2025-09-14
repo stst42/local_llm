@@ -1,0 +1,40 @@
+name: CD
+
+on:
+  push:
+    branches: ["main"]  # si attiva quando qualcuno mergea in main
+  workflow_dispatch:     # permette di lanciarlo anche manualmente
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # Esempio: build + deploy (personalizza questi step)
+      - name: Build artefacts
+        run: |
+          echo "Costruisci il tuo pacchetto/artefatto qui"
+          # es: python -m build
+
+      - name: Deploy
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}    # imposta i secrets in Settings → Secrets and variables → Actions
+        run: |
+          echo "Esegui qui il tuo comando di deploy"
+          # es: ./scripts/deploy.sh --token "$API_TOKEN"

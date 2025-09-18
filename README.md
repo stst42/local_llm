@@ -1,6 +1,6 @@
 # Local/Online Document Summarizer
 
-A simple, no-frills project to summarize `.pdf` or `.docx` files using Hugging Face models. Run the model locally (download weights) or via the Hugging Face Inference API. Optionally builds a lightweight local vector database of document chunks that you can delete after use. This project is on the way to be completed.
+An experiment for a simple, no-frills project to summarize `.pdf` or `.docx` files using Hugging Face models. Run the model locally (download weights) or via the Hugging Face Inference API. Optionally builds a lightweight local vector database of document chunks that you can delete after use. This project is on the way to be completed.
 
 ## Features
 

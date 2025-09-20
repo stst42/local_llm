@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.git
+.gitignore
+models/
+summary.txt
+vdb/
+.DS_Store

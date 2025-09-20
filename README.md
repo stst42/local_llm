@@ -68,6 +68,45 @@ python -m summarizer.summarize path/to/file.pdf --use-vdb --out summary.txt
 python -m summarizer.summarize path/to/file.pdf --use-vdb --delete-vdb --out summary.txt
 ```
 
+## Docker
+
+1) Build the image
+
+```bash
+docker build -t local-llm .
+```
+
+2) Summarize a document with local inference (mount the document directory and persist models)
+
+```bash
+docker run --rm \
+  -v $(pwd):/workspace \
+  -w /workspace \
+  -v local_llm_models:/app/models \
+  local-llm path/to/file.pdf --mode local --size medium --out summary.txt
+```
+
+3) (Optional) Provide a Hugging Face token for API mode
+
+```bash
+docker run --rm \
+  -e HF_API_TOKEN=hf_your_token_here \
+  -v $(pwd):/workspace \
+  -w /workspace \
+  local-llm path/to/file.pdf --mode api --size large --out api_summary.txt
+```
+
+4) (Optional) Pre-download model weights inside the container image volume
+
+```bash
+docker run --rm \
+  -v local_llm_models:/app/models \
+  --entrypoint python \
+  local-llm download_models.py --size large
+```
+
+The summary file and any vector store output will be written into the mounted workspace directory.
+
 ## How It Works (simple)
 
 - `summarizer/documents.py` loads text from `.pdf` (PyPDF) and `.docx` (python-docx)

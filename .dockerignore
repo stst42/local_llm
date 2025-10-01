@@ -1,13 +1,9 @@
+# Exclude local artifacts and model caches from the Docker build context
+models/
+*/__pycache__/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-*.so
-*.egg-info/
-.eggs/
-.git
-.gitignore
-models/
-summary.txt
+.vdb/
 vdb/
-.DS_Store
+summary.txt
+summary_*.txt

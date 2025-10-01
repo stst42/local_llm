@@ -12,7 +12,7 @@ An experiment for a simple, no-frills project to summarize `.pdf` or `.docx` fil
 - Supports `.pdf` and `.docx`
 - Optional local vector store with FAISS (one dir per processed doc)
 
-## Quick Start
+## Quick Start (Local Python)
 
 1) Install Python dependencies
 
@@ -68,25 +68,50 @@ python -m summarizer.summarize path/to/file.pdf --use-vdb --out summary.txt
 python -m summarizer.summarize path/to/file.pdf --use-vdb --delete-vdb --out summary.txt
 ```
 
-## Docker
+## Docker Workflow
 
-1) Build the image
+### 1. Clone the repository and build the image
 
 ```bash
+git clone https://github.com/<your-account>/local_llm.git
+cd local_llm
 docker build -t local-llm .
 ```
 
-2) Summarize a document with local inference (mount the document directory and persist models)
+### 2. Inspect the CLI inside the container
+
+```bash
+docker run --rm local-llm --help
+```
+
+### 3. Summarize documents from your host machine
+
+- Mount the folder that contains the documents you want to process (here we mount the repository root and set it as the working directory).
+- Mount a named volume at `/app/models` so model downloads are cached across runs when you pass `--download`.
 
 ```bash
 docker run --rm \
   -v $(pwd):/workspace \
   -w /workspace \
   -v local_llm_models:/app/models \
+  local-llm path/to/file.pdf --mode local --size medium --download --out summary.txt
+```
+
+On the first run the container downloads the model weights into the mounted volume. Subsequent runs can omit `--download` and reuse the cached model copy.
+
+### 4. (Optional) Persist the Hugging Face cache instead of using `--download`
+
+If you prefer the default Hugging Face cache, mount a volume at `/root/.cache/huggingface` and skip `--download`:
+
+```bash
+docker run --rm \
+  -v $(pwd):/workspace \
+  -w /workspace \
+  -v local_llm_cache:/root/.cache/huggingface \
   local-llm path/to/file.pdf --mode local --size medium --out summary.txt
 ```
 
-3) (Optional) Provide a Hugging Face token for API mode
+### 5. (Optional) Provide a Hugging Face token for API mode
 
 ```bash
 docker run --rm \
@@ -96,7 +121,7 @@ docker run --rm \
   local-llm path/to/file.pdf --mode api --size large --out api_summary.txt
 ```
 
-4) (Optional) Pre-download model weights inside the container image volume
+### 6. (Optional) Pre-download models without running a summarization job
 
 ```bash
 docker run --rm \
@@ -105,7 +130,7 @@ docker run --rm \
   local-llm download_models.py --size large
 ```
 
-The summary file and any vector store output will be written into the mounted workspace directory.
+The summary file and any vector store output (`vdb/...`) are written into the mounted workspace directory so they persist on the host.
 
 ## How It Works (simple)
 

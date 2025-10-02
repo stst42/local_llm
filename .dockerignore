@@ -1,0 +1,9 @@
+# Exclude local artifacts and model caches from the Docker build context
+models/
+*/__pycache__/
+__pycache__/
+*.pyc
+.vdb/
+vdb/
+summary.txt
+summary_*.txt

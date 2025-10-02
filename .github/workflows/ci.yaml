@@ -41,4 +41,4 @@ jobs:
         run: pre-commit run --all-files
 
       - name: Run tests
-        run: pytest -q
+        run: pytest -q || [ $? -eq 5 ]

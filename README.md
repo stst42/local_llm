@@ -1,127 +1,103 @@
-# Local/Online Document Summarizer
+# 📄✨ Local/Online Document Summarizer
 
-An experiment for a simple, no-frills project to summarize `.pdf` or `.docx` files using Hugging Face models. Run the model locally (download weights) or via the Hugging Face Inference API. Optionally builds a lightweight local vector database of document chunks that you can delete after use. This project is on the way to be completed.
+Summarize long-form `.pdf` and `.docx` files with Hugging Face models from a single Docker image. Use local model weights or the Hugging Face Inference API, and optionally build temporary FAISS vector stores you can delete when you're done.
 
-## Features
+# NOTE
+I am currently working on this project, experimenting developing habits and new stuff. Please consider this code as experimental.
+I'll gladly inform when it's gonna be stable. **thanks for your time**.
 
-- Local or API inference
-- Three model sizes:
-  - small: `sshleifer/distilbart-cnn-12-6`
-  - medium: `facebook/bart-large-cnn`
-  - large: `google/pegasus-cnn_dailymail`
-- Supports `.pdf` and `.docx`
-- Optional local vector store with FAISS (one dir per processed doc)
+## ✨ Features
 
-## Quick Start (Local Python)
+- Docker-only workflow; no Python or system packages to install locally.
+- Three summarization presets: small (`sshleifer/distilbart-cnn-12-6`), medium (`facebook/bart-large-cnn`), large (`google/pegasus-cnn_dailymail`).
+- Supports `.pdf` and `.docx` documents.
+- Optional FAISS vector store per document for quick re-querying.
+- Hugging Face API support via `HF_API_TOKEN`.
 
-1) Install Python dependencies
+## 🧰 Prerequisites
 
-```bash
-pip install -r requirements.txt
-```
+### 🪟 Windows
 
-2) (Optional) Use HF API mode by setting a token
+- Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/).
+- Enable WSL 2 during setup and ensure virtualization is turned on in BIOS if prompted.
+- Open PowerShell and run `docker version` to confirm Docker is running.
+- (Optional) Install [Git for Windows](https://git-scm.com/download/win) for convenient cloning.
 
-```bash
-export HF_API_TOKEN=hf_your_token_here
-```
+### 🍎 macOS
 
-3) (Optional) Pre-download local models
+- Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/), choosing the Intel or Apple Silicon build that matches your hardware.
+- Launch Docker Desktop once so the background service stays active (the icon should appear in the menu bar).
+- Open Terminal and run `docker version` to confirm Docker is ready.
+- (Optional) Install [Homebrew](https://brew.sh/) if you also want `git`.
 
-```bash
-python download_models.py --size small
-python download_models.py --size medium
-python download_models.py --size large
-```
+### 🐧 Linux
 
-4) Run summarization
+- Install Docker Engine following the [official guides](https://docs.docker.com/engine/install/) for your distribution.
+- Add your user to the `docker` group and re-login: `sudo usermod -aG docker $USER`.
+- Make sure the daemon is running: `sudo systemctl enable --now docker` (adjust for non-systemd distros).
+- Verify with `docker version`; install `git` via your package manager if needed.
 
-- Local inference (downloads on first use if not pre-downloaded):
+## 🐳 Quick Start with Docker
 
-```bash
-python -m summarizer.summarize path/to/file.pdf --mode local --size medium --out summary.txt
-```
+1. Clone the repository and build the image:
 
-- Local inference with forced pre-download during run:
+   ```bash
+   git clone https://github.com/<your-account>/local_llm.git
+   cd local_llm
+   docker build -t local-llm .
+   ```
 
-```bash
-python -m summarizer.summarize path/to/file.docx --mode local --size small --download --out my_summary.txt
-```
+2. Summarize a document from your host machine (replace the path with your file):
 
-- HF Inference API mode:
+   ```bash
+   docker run --rm \
+     -v "$(pwd)":/workspace \
+     -w /workspace \
+     local-llm path/to/file.pdf --mode local --size medium --out summary.txt
+   ```
 
-```bash
-python -m summarizer.summarize path/to/file.pdf --mode api --size large --out api_summary.txt
-```
+   The summary is written back into your project folder. Choose `--size small|medium|large` to switch models.
 
-5) Vector database (optional)
+### 🔐 Use the Hugging Face API
 
-- Create a local FAISS vector store for the document chunks:
-
-```bash
-python -m summarizer.summarize path/to/file.pdf --use-vdb --out summary.txt
-```
-
-- Delete the vector store after summarization:
-
-```bash
-python -m summarizer.summarize path/to/file.pdf --use-vdb --delete-vdb --out summary.txt
-```
-
-## Docker Workflow
-
-### 1. Clone the repository and build the image
-
-```bash
-git clone https://github.com/<your-account>/local_llm.git
-cd local_llm
-docker build -t local-llm .
-```
-
-### 2. Inspect the CLI inside the container
-
-```bash
-docker run --rm local-llm --help
-```
-
-### 3. Summarize documents from your host machine
-
-- Mount the folder that contains the documents you want to process (here we mount the repository root and set it as the working directory).
-- Mount a named volume at `/app/models` so model downloads are cached across runs when you pass `--download`.
+Provide a token to call the hosted inference API instead of local weights:
 
 ```bash
 docker run --rm \
-  -v $(pwd):/workspace \
+  -e HF_API_TOKEN=hf_your_token_here \
+  -v "$(pwd)":/workspace \
+  -w /workspace \
+  local-llm path/to/file.pdf --mode api --size large --out api_summary.txt
+```
+
+### 💾 Cache Models Between Runs
+
+Persist downloaded model files so subsequent runs start instantly:
+
+```bash
+docker run --rm \
+  -v "$(pwd)":/workspace \
   -w /workspace \
   -v local_llm_models:/app/models \
   local-llm path/to/file.pdf --mode local --size medium --download --out summary.txt
 ```
 
-On the first run the container downloads the model weights into the mounted volume. Subsequent runs can omit `--download` and reuse the cached model copy.
+You can reuse the same named volume (`local_llm_models`) across runs. Skip `--download` once the cache exists.
 
-### 4. (Optional) Persist the Hugging Face cache instead of using `--download`
+### 🔍 Use the Vector Store
 
-If you prefer the default Hugging Face cache, mount a volume at `/root/.cache/huggingface` and skip `--download`:
-
-```bash
-docker run --rm \
-  -v $(pwd):/workspace \
-  -w /workspace \
-  -v local_llm_cache:/root/.cache/huggingface \
-  local-llm path/to/file.pdf --mode local --size medium --out summary.txt
-```
-
-### 5. (Optional) Provide a Hugging Face token for API mode
+Build a temporary FAISS index for chunk-level lookups, and optionally delete it when finished:
 
 ```bash
 docker run --rm \
-  -e HF_API_TOKEN=hf_your_token_here \
-  -v $(pwd):/workspace \
+  -v "$(pwd)":/workspace \
   -w /workspace \
-  local-llm path/to/file.pdf --mode api --size large --out api_summary.txt
+  local-llm path/to/file.pdf --mode local --size medium --use-vdb --out summary.txt
 ```
 
-### 6. (Optional) Pre-download models without running a summarization job
+Add `--delete-vdb` to remove the index immediately after summarization, or delete the `vdb/` folder manually later.
+
+### 📦 Pre-download Models Without Summarizing
 
 ```bash
 docker run --rm \
@@ -130,19 +106,16 @@ docker run --rm \
   local-llm download_models.py --size large
 ```
 
-The summary file and any vector store output (`vdb/...`) are written into the mounted workspace directory so they persist on the host.
+## 🧠 How It Works
 
-## How It Works (simple)
+- `summarizer/documents.py` extracts text from `.pdf` (PyPDF) or `.docx` (python-docx).
+- `summarizer/summarize.py` chunks the text, summarizes each chunk, and merges the results.
+  - Local mode uses `transformers.pipeline("summarization")`.
+  - API mode POSTs to `https://api-inference.huggingface.co/models/<model>`.
+- Optional FAISS indices are stored in `vdb/<doc>` when `--use-vdb` is passed.
 
-- `summarizer/documents.py` loads text from `.pdf` (PyPDF) and `.docx` (python-docx)
-- `summarizer/summarize.py` splits text into overlapping chunks and summarizes each
-  - Local mode: `transformers.pipeline("summarization")`
-  - API mode: POST to `https://api-inference.huggingface.co/models/<model>`
-- Summaries are combined and summarized again for a shorter final output
-- If `--use-vdb` is passed, `summarizer/vector_store.py` builds a FAISS index in `vdb/<doc>`
+## ⚠️ Notes
 
-## Notes
-
-- `.doc` is not supported (no `textract`). Convert `.doc` to `.docx` if needed.
-- For large documents, local inference benefits from a GPU and proper PyTorch install.
-- The code is intentionally minimal and straightforward.
+- `.doc` files are not supported; convert to `.docx` first.
+- Large documents benefit from enabling GPU passthrough if your Docker setup supports it.
+- Delete the `vdb/` folder or Docker volumes when you no longer need cached data.

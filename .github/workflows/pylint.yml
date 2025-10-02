@@ -27,7 +27,7 @@ jobs:
         pylint --exit-zero $(git ls-files '*.py') > pylint-report.txt
 
     - name: Upload pylint report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pylint-report-${{ matrix.python-version }}
         path: pylint-report.txt
